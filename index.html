@@ -508,8 +508,36 @@
                 <div class="export-section">
                     <h4>📤 データ管理</h4>
                     <button class="export-button" onclick="exportData()">CSVエクスポート</button>
-                    <button class="export-button" onclick="clearHistory()">履歴クリア</button>
                     <button class="export-button" onclick="backupData()">バックアップ</button>
+                    <button class="export-button" onclick="showImportModal()">データ復元</button>
+                    <button class="export-button" onclick="syncData()">デバイス間同期</button>
+                    <button class="export-button" onclick="clearHistory()">履歴クリア</button>
+                </div>
+
+                <!-- データ同期モーダル -->
+                <div id="syncModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 90%; width: 400px;">
+                        <h3>🔄 デバイス間同期</h3>
+                        <p>以下のコードをコピーして、他のデバイスで「データ復元」に貼り付けてください：</p>
+                        <textarea id="syncCode" readonly style="width: 100%; height: 100px; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"></textarea>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <button onclick="copySyncCode()" style="background: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">コードをコピー</button>
+                            <button onclick="closeSyncModal()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">閉じる</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- データインポートモーダル -->
+                <div id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 90%; width: 400px;">
+                        <h3>📥 データ復元</h3>
+                        <p>他のデバイスで生成した同期コードを貼り付けてください：</p>
+                        <textarea id="importCode" placeholder="同期コードをここに貼り付け..." style="width: 100%; height: 100px; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"></textarea>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <button onclick="importData()" style="background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">データを復元</button>
+                            <button onclick="closeImportModal()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">キャンセル</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1277,7 +1305,78 @@
             alert('バックアップファイルをダウンロードしました。');
         }
 
-        // 履歴クリア
+        // データ同期機能
+        function syncData() {
+            const syncData = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                tradeHistory: tradeHistory,
+                portfolioData: portfolioData
+            };
+
+            const syncCode = btoa(JSON.stringify(syncData));
+            document.getElementById('syncCode').value = syncCode;
+            document.getElementById('syncModal').style.display = 'block';
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').style.display = 'block';
+        }
+
+        function importData() {
+            const importCode = document.getElementById('importCode').value.trim();
+            if (!importCode) {
+                alert('同期コードを入力してください。');
+                return;
+            }
+
+            try {
+                const syncData = JSON.parse(atob(importCode));
+                
+                if (confirm('現在のデータを上書きしますか？（既存データは削除されます）')) {
+                    tradeHistory = syncData.tradeHistory || [];
+                    portfolioData = syncData.portfolioData || [];
+                    
+                    saveData();
+                    updateHistoryTable();
+                    updatePortfolioTable();
+                    updatePortfolioSummary();
+                    updateStats();
+                    
+                    closeImportModal();
+                    alert('データの復元が完了しました！');
+                }
+            } catch (e) {
+                alert('無効な同期コードです。正しいコードを入力してください。');
+            }
+        }
+
+        function copySyncCode() {
+            const syncCode = document.getElementById('syncCode');
+            syncCode.select();
+            syncCode.setSelectionRange(0, 99999); // モバイル対応
+            
+            try {
+                document.execCommand('copy');
+                alert('同期コードをコピーしました！');
+            } catch (e) {
+                alert('手動でコードをコピーしてください。');
+            }
+        }
+
+        function closeSyncModal() {
+            document.getElementById('syncModal').style.display = 'none';
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+            document.getElementById('importCode').value = '';
+        }
+
+        // QRコード生成（簡易版）
+        function generateQRCode(text) {
+            return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
+        }
         function clearHistory() {
             if (confirm('すべての取引履歴を削除しますか？この操作は取り消せません。')) {
                 tradeHistory = [];
