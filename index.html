@@ -1305,33 +1305,75 @@
             alert('バックアップファイルをダウンロードしました。');
         }
 
-        // データ同期機能
+        // データ同期機能（日本語対応修正版）
         function syncData() {
-            const syncData = {
-                version: '1.0',
-                timestamp: new Date().toISOString(),
-                tradeHistory: tradeHistory,
-                portfolioData: portfolioData
-            };
+            try {
+                console.log('同期開始...');
+                
+                const syncData = {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    tradeHistory: tradeHistory || [],
+                    portfolioData: portfolioData || []
+                };
 
-            const syncCode = btoa(JSON.stringify(syncData));
-            document.getElementById('syncCode').value = syncCode;
-            document.getElementById('syncModal').style.display = 'block';
+                console.log('同期データ:', syncData);
+
+                // 日本語対応のエンコード
+                const syncCode = btoa(unescape(encodeURIComponent(JSON.stringify(syncData))));
+                console.log('同期コード生成完了');
+
+                const syncCodeElement = document.getElementById('syncCode');
+                const syncModalElement = document.getElementById('syncModal');
+
+                if (!syncCodeElement) {
+                    alert('エラー: syncCode要素が見つかりません');
+                    return;
+                }
+
+                if (!syncModalElement) {
+                    alert('エラー: syncModal要素が見つかりません');
+                    return;
+                }
+
+                syncCodeElement.value = syncCode;
+                syncModalElement.style.display = 'block';
+                
+                console.log('モーダル表示完了');
+                
+            } catch (error) {
+                console.error('同期エラー:', error);
+                alert('同期処理でエラーが発生しました: ' + error.message);
+            }
         }
 
         function showImportModal() {
-            document.getElementById('importModal').style.display = 'block';
+            try {
+                const importModalElement = document.getElementById('importModal');
+                if (!importModalElement) {
+                    alert('エラー: importModal要素が見つかりません');
+                    return;
+                }
+                importModalElement.style.display = 'block';
+            } catch (error) {
+                console.error('インポートモーダルエラー:', error);
+                alert('インポートモーダルでエラーが発生しました: ' + error.message);
+            }
         }
 
         function importData() {
-            const importCode = document.getElementById('importCode').value.trim();
-            if (!importCode) {
-                alert('同期コードを入力してください。');
-                return;
-            }
-
             try {
-                const syncData = JSON.parse(atob(importCode));
+                const importCode = document.getElementById('importCode').value.trim();
+                if (!importCode) {
+                    alert('同期コードを入力してください。');
+                    return;
+                }
+
+                console.log('インポート開始...');
+
+                // 日本語対応のデコード
+                const syncData = JSON.parse(decodeURIComponent(escape(atob(importCode))));
+                console.log('インポートデータ:', syncData);
                 
                 if (confirm('現在のデータを上書きしますか？（既存データは削除されます）')) {
                     tradeHistory = syncData.tradeHistory || [];
@@ -1347,35 +1389,118 @@
                     alert('データの復元が完了しました！');
                 }
             } catch (e) {
-                alert('無効な同期コードです。正しいコードを入力してください。');
+                console.error('インポートエラー:', e);
+                alert('無効な同期コードです。正しいコードを入力してください。\nエラー: ' + e.message);
             }
         }
 
         function copySyncCode() {
-            const syncCode = document.getElementById('syncCode');
-            syncCode.select();
-            syncCode.setSelectionRange(0, 99999); // モバイル対応
-            
             try {
-                document.execCommand('copy');
-                alert('同期コードをコピーしました！');
+                const syncCode = document.getElementById('syncCode');
+                if (!syncCode) {
+                    alert('同期コードが見つかりません');
+                    return;
+                }
+                
+                syncCode.select();
+                syncCode.setSelectionRange(0, 99999); // モバイル対応
+                
+                // 新しいClipboard APIを試す
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(syncCode.value).then(() => {
+                        alert('同期コードをコピーしました！');
+                    }).catch(() => {
+                        // fallback
+                        document.execCommand('copy');
+                        alert('同期コードをコピーしました！');
+                    });
+                } else {
+                    document.execCommand('copy');
+                    alert('同期コードをコピーしました！');
+                }
             } catch (e) {
+                console.error('コピーエラー:', e);
                 alert('手動でコードをコピーしてください。');
             }
         }
 
         function closeSyncModal() {
-            document.getElementById('syncModal').style.display = 'none';
+            try {
+                const syncModalElement = document.getElementById('syncModal');
+                if (syncModalElement) {
+                    syncModalElement.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('モーダル閉じるエラー:', error);
+            }
         }
 
         function closeImportModal() {
-            document.getElementById('importModal').style.display = 'none';
-            document.getElementById('importCode').value = '';
+            try {
+                const importModalElement = document.getElementById('importModal');
+                const importCodeElement = document.getElementById('importCode');
+                
+                if (importModalElement) {
+                    importModalElement.style.display = 'none';
+                }
+                if (importCodeElement) {
+                    importCodeElement.value = '';
+                }
+            } catch (error) {
+                console.error('インポートモーダル閉じるエラー:', error);
+            }
         }
 
-        // QRコード生成（簡易版）
-        function generateQRCode(text) {
-            return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
+        // 簡易同期テスト機能（日本語対応）
+        function testSync() {
+            console.log('=== 同期テスト ===');
+            console.log('tradeHistory:', tradeHistory);
+            console.log('portfolioData:', portfolioData);
+            
+            // テスト用のダミーデータ作成
+            const testData = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                tradeHistory: [{
+                    id: 999999,
+                    date: '2024/1/1',
+                    stockName: 'テスト銘柄',
+                    buyPrice: 1000,
+                    sellPrice: 1100,
+                    shares: 100,
+                    profit: 9000,
+                    profitRate: 9,
+                    isWin: true
+                }],
+                portfolioData: []
+            };
+            
+            try {
+                const testCode = btoa(unescape(encodeURIComponent(JSON.stringify(testData))));
+                console.log('テストコード:', testCode);
+                alert('テスト成功！コンソールを確認してください');
+            } catch (e) {
+                console.error('テストエラー:', e);
+                alert('テスト失敗: ' + e.message);
+            }
+        }
+
+        // 緊急用の手動同期（簡易版）
+        function emergencySync() {
+            try {
+                const data = {
+                    history: tradeHistory || [],
+                    portfolio: portfolioData || []
+                };
+                
+                const code = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+                
+                // プロンプトで表示
+                prompt('以下の同期コードをコピーしてください（全選択してCtrl+C）:', code);
+                
+            } catch (e) {
+                alert('緊急同期でもエラーが発生しました: ' + e.message);
+            }
         }
         function clearHistory() {
             if (confirm('すべての取引履歴を削除しますか？この操作は取り消せません。')) {
