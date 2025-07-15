@@ -274,14 +274,15 @@
         <h1>📊 株取引成績管理</h1>
         
         <div class="tabs">
-            <button class="tab active" onclick="showTab('trade')">取引</button>
+            <button class="tab active" onclick="showTab('simulation')">シミュレーション</button>
+            <button class="tab" onclick="showTab('portfolio')">保有株</button>
             <button class="tab" onclick="showTab('history')">履歴</button>
             <button class="tab" onclick="showTab('stats')">成績</button>
             <button class="tab" onclick="showTab('chart')">グラフ</button>
         </div>
 
-        <!-- 取引タブ -->
-        <div id="trade" class="tab-content active">
+        <!-- シミュレーションタブ（旧取引タブ） -->
+        <div id="simulation" class="tab-content active">
             <!-- 基本情報入力 -->
             <div class="section">
                 <h2>📝 銘柄・購入情報</h2>
@@ -394,10 +395,94 @@
                     </div>
                 </div>
                 
+                <button class="add-button" onclick="addToPortfolio()">📈 保有株に追加</button>
                 <button class="record-button" onclick="recordTrade()">📝 取引を記録して反省材料に</button>
             </div>
         </div>
 
+        <!-- 保有株タブ -->
+        <div id="portfolio" class="tab-content">
+            <div class="section summary">
+                <h2>📊 保有株一覧</h2>
+                <table id="portfolioTable">
+                    <thead>
+                        <tr>
+                            <th>銘柄</th>
+                            <th>購入価格</th>
+                            <th>株数</th>
+                            <th>現在価格</th>
+                            <th>利確目標</th>
+                            <th>損切価格</th>
+                            <th>評価額</th>
+                            <th>損益</th>
+                            <th>損益率</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolioBody">
+                        <!-- 動的に追加される行 -->
+                    </tbody>
+                </table>
+                
+                <div class="result">
+                    <h3>📊 ポートフォリオ全体</h3>
+                    <div class="result-item">
+                        <span>総投資額:</span>
+                        <span id="totalPortfolioInvestment" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span>総評価額:</span>
+                        <span id="totalPortfolioValue" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span><strong>総損益:</strong></span>
+                        <span id="totalPortfolioProfit" class="neutral"><strong>0円</strong></span>
+                    </div>
+                    <div class="result-item">
+                        <span>総損益率:</span>
+                        <span id="totalPortfolioProfitRate" class="neutral">0%</span>
+                    </div>
+                </div>
+
+                <!-- 個別銘柄詳細シミュレーション -->
+                <div class="section" id="selectedStockDetail" style="display: none;">
+                    <h2 id="selectedStockName">📈 銘柄詳細</h2>
+                    <div class="profit-loss-grid">
+                        <div class="profit-loss-item">
+                            <h4>🟢 利確時予想</h4>
+                            <div class="amount positive" id="selectedProfitAmount">+0円</div>
+                            <div class="rate positive" id="selectedProfitRate">+0%</div>
+                        </div>
+                        <div class="profit-loss-item">
+                            <h4>🔴 損切時予想</h4>
+                            <div class="amount negative" id="selectedLossAmount">-0円</div>
+                            <div class="rate negative" id="selectedLossRate">-0%</div>
+                        </div>
+                    </div>
+                    <div class="profit-loss-grid">
+                        <div class="profit-loss-item">
+                            <h4>📊 現在状況</h4>
+                            <div class="amount neutral" id="selectedCurrentAmount">0円</div>
+                            <div class="rate neutral" id="selectedCurrentRate">0%</div>
+                        </div>
+                        <div class="profit-loss-item">
+                            <h4>🎯 目標まで</h4>
+                            <div class="amount neutral" id="selectedTargetProgress">-</div>
+                            <div class="rate neutral" id="selectedTargetPercent">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group" style="margin-top: 15px;">
+                        <label>売却価格入力（取引記録用）</label>
+                        <div class="input-row">
+                            <input type="number" id="portfolioSellPrice" placeholder="実際の売却価格">
+                            <span>円</span>
+                            <button class="record-button" onclick="sellFromPortfolio()" style="margin: 0; width: auto; padding: 6px 12px;">売却記録</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- 取引履歴タブ -->
         <div id="history" class="tab-content">
             <div class="section history-section">
@@ -500,7 +585,9 @@
     <script>
         // データ管理（LocalStorage使用）
         let tradeHistory = [];
+        let portfolioData = [];
         let charts = {};
+        let selectedStockId = null;
 
         // タブ切り替え
         function showTab(tabName) {
@@ -515,6 +602,10 @@
             }
             if (tabName === 'stats') {
                 updateStats();
+            }
+            if (tabName === 'portfolio') {
+                updatePortfolioTable();
+                updatePortfolioSummary();
             }
         }
 
@@ -532,6 +623,7 @@
             try {
                 const data = {
                     history: tradeHistory,
+                    portfolio: portfolioData,
                     lastSaved: new Date().toISOString()
                 };
                 localStorage.setItem('stockTradingData', JSON.stringify(data));
@@ -547,53 +639,110 @@
                 if (saved) {
                     const data = JSON.parse(saved);
                     tradeHistory = data.history || [];
+                    portfolioData = data.portfolio || [];
                     updateHistoryTable();
+                    updatePortfolioTable();
+                    updatePortfolioSummary();
                     updateStats();
                 }
             } catch (e) {
                 console.warn('データ読み込みに失敗しました:', e);
                 tradeHistory = [];
+                portfolioData = [];
             }
         }
 
-        // 取引計算
+        // 取引計算（新しいレイアウト対応）
         function calculateTrade() {
             const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
             const buyShares = parseInt(document.getElementById('buyShares').value) || 0;
             const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+            const profitPrice = parseFloat(document.getElementById('profitPrice').value) || 0;
+            const lossPrice = parseFloat(document.getElementById('lossPrice').value) || 0;
             const buyFee = 99;
 
+            // 購入情報の計算
             const buyAmount = buyPrice * buyShares;
-            const sellAmount = sellPrice * buyShares;
-            const totalFees = buyFee * 2;
-            const grossProfit = sellAmount - buyAmount - totalFees;
-            const tax = grossProfit > 0 ? grossProfit * 0.20315 : 0;
-            const finalProfit = grossProfit - tax;
-            const profitRate = buyAmount > 0 ? (finalProfit / buyAmount) * 100 : 0;
+            const totalInvestmentAmount = buyAmount + buyFee;
 
-            document.getElementById('totalBuyAmount').textContent = (buyAmount + buyFee).toLocaleString() + '円';
-            document.getElementById('totalSellAmount').textContent = sellAmount.toLocaleString() + '円';
-            document.getElementById('totalFees').textContent = totalFees.toLocaleString() + '円';
-            document.getElementById('totalTax').textContent = tax.toLocaleString() + '円';
-            document.getElementById('finalProfit').textContent = finalProfit.toLocaleString() + '円';
-            document.getElementById('profitRate').textContent = profitRate.toFixed(2) + '%';
+            document.getElementById('buyAmountOnly').textContent = buyAmount.toLocaleString() + '円';
+            document.getElementById('buyFeeOnly').textContent = buyFee.toLocaleString() + '円';
+            document.getElementById('totalInvestment').textContent = totalInvestmentAmount.toLocaleString() + '円';
 
-            // 色分け
-            const profitElement = document.getElementById('finalProfit');
-            const rateElement = document.getElementById('profitRate');
-            
-            if (finalProfit > 0) {
-                profitElement.className = 'positive';
-                rateElement.className = 'positive';
-            } else if (finalProfit < 0) {
-                profitElement.className = 'negative';
-                rateElement.className = 'negative';
+            // 実際の取引結果
+            if (sellPrice > 0 && buyShares > 0) {
+                const sellAmount = sellPrice * buyShares;
+                const totalFees = buyFee * 2;
+                const grossProfit = sellAmount - buyAmount - totalFees;
+                const tax = grossProfit > 0 ? grossProfit * 0.20315 : 0;
+                const finalProfit = grossProfit - tax;
+                const profitRate = buyAmount > 0 ? (finalProfit / buyAmount) * 100 : 0;
+
+                document.getElementById('totalSellAmount').textContent = sellAmount.toLocaleString() + '円';
+                document.getElementById('totalFees').textContent = totalFees.toLocaleString() + '円';
+                document.getElementById('totalTax').textContent = tax.toLocaleString() + '円';
+                document.getElementById('finalProfit').textContent = finalProfit.toLocaleString() + '円';
+                document.getElementById('profitRate').textContent = profitRate.toFixed(2) + '%';
+
+                // 目標との差を計算
+                let targetDiffText = '-';
+                if (profitPrice > 0 && finalProfit > 0) {
+                    // 利確目標と比較
+                    const profitTarget = calculateProfitLossAmount(profitPrice, buyPrice, buyShares, buyFee);
+                    const diff = finalProfit - profitTarget;
+                    targetDiffText = `利確目標より${diff >= 0 ? '+' : ''}${diff.toLocaleString()}円`;
+                } else if (lossPrice > 0 && finalProfit < 0) {
+                    // 損切目標と比較
+                    const lossTarget = calculateProfitLossAmount(lossPrice, buyPrice, buyShares, buyFee);
+                    const diff = finalProfit - lossTarget;
+                    targetDiffText = `損切目標より${diff >= 0 ? '+' : ''}${diff.toLocaleString()}円`;
+                }
+                document.getElementById('targetDiff').textContent = targetDiffText;
+
+                // 色分け
+                const profitElement = document.getElementById('finalProfit');
+                const rateElement = document.getElementById('profitRate');
+                const targetElement = document.getElementById('targetDiff');
+                
+                if (finalProfit > 0) {
+                    profitElement.className = 'positive';
+                    rateElement.className = 'positive';
+                } else if (finalProfit < 0) {
+                    profitElement.className = 'negative';
+                    rateElement.className = 'negative';
+                } else {
+                    profitElement.className = 'neutral';
+                    rateElement.className = 'neutral';
+                }
+
+                if (targetDiffText.includes('+')) {
+                    targetElement.className = 'positive';
+                } else if (targetDiffText.includes('-') && targetDiffText !== '-') {
+                    targetElement.className = 'negative';
+                } else {
+                    targetElement.className = 'neutral';
+                }
             } else {
-                profitElement.className = 'neutral';
-                rateElement.className = 'neutral';
+                // 売却価格が未入力の場合
+                document.getElementById('totalSellAmount').textContent = '0円';
+                document.getElementById('totalFees').textContent = '198円';
+                document.getElementById('totalTax').textContent = '0円';
+                document.getElementById('finalProfit').textContent = '0円';
+                document.getElementById('profitRate').textContent = '0%';
+                document.getElementById('targetDiff').textContent = '-';
             }
 
             calculateProfitLoss();
+        }
+
+        // 利確・損切計算のヘルパー関数
+        function calculateProfitLossAmount(targetPrice, buyPrice, buyShares, buyFee) {
+            const buyAmount = buyPrice * buyShares;
+            const sellAmount = targetPrice * buyShares;
+            const totalFees = buyFee * 2;
+            const grossProfit = sellAmount - buyAmount - totalFees;
+            const tax = grossProfit > 0 ? grossProfit * 0.20315 : 0;
+            return grossProfit - tax;
         }
 
         function calculateProfitLoss() {
@@ -603,35 +752,273 @@
             const lossPrice = parseFloat(document.getElementById('lossPrice').value) || 0;
             const buyFee = 99;
 
-            const buyAmount = buyPrice * buyShares;
-            const totalFees = buyFee * 2;
-
             // 利確計算
             if (profitPrice > 0 && buyShares > 0) {
-                const profitSellAmount = profitPrice * buyShares;
-                const profitGross = profitSellAmount - buyAmount - totalFees;
-                const profitTax = profitGross > 0 ? profitGross * 0.20315 : 0;
-                const profitFinal = profitGross - profitTax;
+                const profitFinal = calculateProfitLossAmount(profitPrice, buyPrice, buyShares, buyFee);
+                const buyAmount = buyPrice * buyShares;
                 const profitRate = buyAmount > 0 ? (profitFinal / buyAmount) * 100 : 0;
 
                 document.getElementById('profitAmount').textContent = '+' + profitFinal.toLocaleString() + '円';
                 document.getElementById('profitAmountRate').textContent = '+' + profitRate.toFixed(2) + '%';
+            } else {
+                document.getElementById('profitAmount').textContent = '+0円';
+                document.getElementById('profitAmountRate').textContent = '+0%';
             }
 
             // 損切計算
             if (lossPrice > 0 && buyShares > 0) {
-                const lossSellAmount = lossPrice * buyShares;
-                const lossGross = lossSellAmount - buyAmount - totalFees;
-                const lossTax = lossGross > 0 ? lossGross * 0.20315 : 0;
-                const lossFinal = lossGross - lossTax;
+                const lossFinal = calculateProfitLossAmount(lossPrice, buyPrice, buyShares, buyFee);
+                const buyAmount = buyPrice * buyShares;
                 const lossRate = buyAmount > 0 ? (lossFinal / buyAmount) * 100 : 0;
 
                 document.getElementById('lossAmount').textContent = lossFinal.toLocaleString() + '円';
                 document.getElementById('lossAmountRate').textContent = lossRate.toFixed(2) + '%';
+            } else {
+                document.getElementById('lossAmount').textContent = '-0円';
+                document.getElementById('lossAmountRate').textContent = '-0%';
             }
         }
 
-        // 取引記録
+        // 保有株に追加
+        function addToPortfolio() {
+            const stockName = document.getElementById('stockName').value || '未入力';
+            const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
+            const buyShares = parseInt(document.getElementById('buyShares').value) || 0;
+            const profitPrice = parseFloat(document.getElementById('profitPrice').value) || 0;
+            const lossPrice = parseFloat(document.getElementById('lossPrice').value) || 0;
+
+            if (buyPrice > 0 && buyShares > 0) {
+                const stock = {
+                    id: Date.now(),
+                    name: stockName,
+                    buyPrice: buyPrice,
+                    shares: buyShares,
+                    currentPrice: buyPrice, // 初期値は購入価格
+                    profitTarget: profitPrice,
+                    lossTarget: lossPrice,
+                    addedDate: new Date().toLocaleDateString('ja-JP')
+                };
+
+                portfolioData.push(stock);
+                saveData();
+                updatePortfolioTable();
+                updatePortfolioSummary();
+
+                // 入力フィールドをクリア
+                document.getElementById('stockName').value = '';
+                document.getElementById('buyPrice').value = '';
+                document.getElementById('buyShares').value = '';
+                document.getElementById('profitPrice').value = '';
+                document.getElementById('lossPrice').value = '';
+                calculateTrade();
+
+                alert('保有株に追加しました！');
+            } else {
+                alert('銘柄名、購入価格、購入株数を入力してください。');
+            }
+        }
+
+        // ポートフォリオテーブル更新
+        function updatePortfolioTable() {
+            const tbody = document.getElementById('portfolioBody');
+            tbody.innerHTML = '';
+
+            portfolioData.forEach(stock => {
+                const investmentAmount = stock.buyPrice * stock.shares + 99; // 手数料込み
+                const currentValue = stock.currentPrice * stock.shares;
+                const profit = currentValue - investmentAmount;
+                const profitRate = (profit / investmentAmount) * 100;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${stock.name}</td>
+                    <td>¥${stock.buyPrice.toLocaleString()}</td>
+                    <td>${stock.shares}</td>
+                    <td><input type="number" value="${stock.currentPrice}" onchange="updateCurrentPrice(${stock.id}, this.value)" style="width: 70px; padding: 4px; font-size: 12px;"></td>
+                    <td>¥${stock.profitTarget.toLocaleString()}</td>
+                    <td>¥${stock.lossTarget.toLocaleString()}</td>
+                    <td>¥${currentValue.toLocaleString()}</td>
+                    <td class="${profit >= 0 ? 'positive' : 'negative'}">¥${profit.toLocaleString()}</td>
+                    <td class="${profitRate >= 0 ? 'positive' : 'negative'}">${profitRate.toFixed(2)}%</td>
+                    <td>
+                        <button onclick="selectStock(${stock.id})" style="background: #3498db; color: white; border: none; padding: 3px 6px; border-radius: 3px; cursor: pointer; font-size: 10px; margin: 1px;">詳細</button>
+                        <button onclick="removeFromPortfolio(${stock.id})" class="remove-button">削除</button>
+                    </td>
+                `;
+            });
+        }
+
+        // 現在価格更新
+        function updateCurrentPrice(id, newPrice) {
+            const stock = portfolioData.find(s => s.id === id);
+            if (stock) {
+                stock.currentPrice = parseFloat(newPrice) || 0;
+                saveData();
+                updatePortfolioTable();
+                updatePortfolioSummary();
+                if (selectedStockId === id) {
+                    updateSelectedStockDetail();
+                }
+            }
+        }
+
+        // ポートフォリオサマリー更新
+        function updatePortfolioSummary() {
+            const totalInvestment = portfolioData.reduce((sum, stock) => sum + (stock.buyPrice * stock.shares + 99), 0);
+            const totalValue = portfolioData.reduce((sum, stock) => sum + (stock.currentPrice * stock.shares), 0);
+            const totalProfit = totalValue - totalInvestment;
+            const totalProfitRate = totalInvestment > 0 ? (totalProfit / totalInvestment) * 100 : 0;
+
+            document.getElementById('totalPortfolioInvestment').textContent = totalInvestment.toLocaleString() + '円';
+            document.getElementById('totalPortfolioValue').textContent = totalValue.toLocaleString() + '円';
+            document.getElementById('totalPortfolioProfit').textContent = totalProfit.toLocaleString() + '円';
+            document.getElementById('totalPortfolioProfitRate').textContent = totalProfitRate.toFixed(2) + '%';
+
+            // 色分け
+            const profitElement = document.getElementById('totalPortfolioProfit');
+            const rateElement = document.getElementById('totalPortfolioProfitRate');
+            
+            if (totalProfit > 0) {
+                profitElement.className = 'positive';
+                rateElement.className = 'positive';
+            } else if (totalProfit < 0) {
+                profitElement.className = 'negative';
+                rateElement.className = 'negative';
+            } else {
+                profitElement.className = 'neutral';
+                rateElement.className = 'neutral';
+            }
+        }
+
+        // 銘柄選択
+        function selectStock(id) {
+            selectedStockId = id;
+            updateSelectedStockDetail();
+            document.getElementById('selectedStockDetail').style.display = 'block';
+        }
+
+        // 選択された銘柄の詳細更新
+        function updateSelectedStockDetail() {
+            const stock = portfolioData.find(s => s.id === selectedStockId);
+            if (!stock) return;
+
+            document.getElementById('selectedStockName').textContent = `📈 ${stock.name} 詳細シミュレーション`;
+
+            const investmentAmount = stock.buyPrice * stock.shares + 99;
+            const currentValue = stock.currentPrice * stock.shares;
+            const currentProfit = currentValue - investmentAmount;
+            const currentProfitRate = (currentProfit / investmentAmount) * 100;
+
+            // 利確時計算
+            const profitValue = stock.profitTarget * stock.shares;
+            const profitAmount = profitValue - investmentAmount - 99;
+            const profitTax = profitAmount > 0 ? profitAmount * 0.20315 : 0;
+            const finalProfitAmount = profitAmount - profitTax;
+            const finalProfitRate = (finalProfitAmount / investmentAmount) * 100;
+
+            // 損切時計算
+            const lossValue = stock.lossTarget * stock.shares;
+            const lossAmount = lossValue - investmentAmount - 99;
+            const lossTax = lossAmount > 0 ? lossAmount * 0.20315 : 0;
+            const finalLossAmount = lossAmount - lossTax;
+            const finalLossRate = (finalLossAmount / investmentAmount) * 100;
+
+            // 目標までの進捗
+            let targetProgress = '-';
+            let targetPercent = '-';
+            if (currentProfit > 0 && stock.profitTarget > 0) {
+                const progressToProfit = (stock.currentPrice - stock.buyPrice) / (stock.profitTarget - stock.buyPrice) * 100;
+                targetProgress = `利確まで${(100 - progressToProfit).toFixed(1)}%`;
+                targetPercent = `あと¥${((stock.profitTarget - stock.currentPrice) * stock.shares).toLocaleString()}`;
+            } else if (currentProfit < 0 && stock.lossTarget > 0) {
+                const progressToLoss = Math.abs((stock.currentPrice - stock.buyPrice) / (stock.lossTarget - stock.buyPrice)) * 100;
+                targetProgress = `損切まで${(100 - progressToLoss).toFixed(1)}%`;
+                targetPercent = `あと¥${Math.abs((stock.lossTarget - stock.currentPrice) * stock.shares).toLocaleString()}`;
+            }
+
+            document.getElementById('selectedProfitAmount').textContent = '+' + finalProfitAmount.toLocaleString() + '円';
+            document.getElementById('selectedProfitRate').textContent = '+' + finalProfitRate.toFixed(2) + '%';
+            document.getElementById('selectedLossAmount').textContent = finalLossAmount.toLocaleString() + '円';
+            document.getElementById('selectedLossRate').textContent = finalLossRate.toFixed(2) + '%';
+            document.getElementById('selectedCurrentAmount').textContent = currentProfit.toLocaleString() + '円';
+            document.getElementById('selectedCurrentRate').textContent = currentProfitRate.toFixed(2) + '%';
+            document.getElementById('selectedTargetProgress').textContent = targetProgress;
+            document.getElementById('selectedTargetPercent').textContent = targetPercent;
+
+            // 色分け
+            document.getElementById('selectedCurrentAmount').className = currentProfit >= 0 ? 'positive' : 'negative';
+            document.getElementById('selectedCurrentRate').className = currentProfitRate >= 0 ? 'positive' : 'negative';
+        }
+
+        // ポートフォリオから売却
+        function sellFromPortfolio() {
+            if (!selectedStockId) {
+                alert('銘柄を選択してください。');
+                return;
+            }
+
+            const sellPrice = parseFloat(document.getElementById('portfolioSellPrice').value);
+            if (!sellPrice || sellPrice <= 0) {
+                alert('売却価格を入力してください。');
+                return;
+            }
+
+            const stock = portfolioData.find(s => s.id === selectedStockId);
+            if (!stock) return;
+
+            // 取引履歴に追加
+            const investmentAmount = stock.buyPrice * stock.shares + 99;
+            const sellAmount = sellPrice * stock.shares;
+            const totalFees = 99 * 2;
+            const grossProfit = sellAmount - (stock.buyPrice * stock.shares) - totalFees;
+            const tax = grossProfit > 0 ? grossProfit * 0.20315 : 0;
+            const finalProfit = grossProfit - tax;
+            const profitRate = (finalProfit / (stock.buyPrice * stock.shares)) * 100;
+
+            const trade = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('ja-JP'),
+                stockName: stock.name,
+                buyPrice: stock.buyPrice,
+                sellPrice: sellPrice,
+                shares: stock.shares,
+                profit: finalProfit,
+                profitRate: profitRate,
+                isWin: finalProfit > 0,
+                profitTarget: stock.profitTarget,
+                lossTarget: stock.lossTarget
+            };
+
+            tradeHistory.push(trade);
+
+            // ポートフォリオから削除
+            portfolioData = portfolioData.filter(s => s.id !== selectedStockId);
+            selectedStockId = null;
+            document.getElementById('selectedStockDetail').style.display = 'none';
+            document.getElementById('portfolioSellPrice').value = '';
+
+            saveData();
+            updatePortfolioTable();
+            updatePortfolioSummary();
+            updateHistoryTable();
+            updateStats();
+
+            alert(`${stock.name}を売却記録しました！`);
+        }
+
+        // ポートフォリオから削除
+        function removeFromPortfolio(id) {
+            if (confirm('この銘柄を保有株から削除しますか？')) {
+                portfolioData = portfolioData.filter(stock => stock.id !== id);
+                if (selectedStockId === id) {
+                    selectedStockId = null;
+                    document.getElementById('selectedStockDetail').style.display = 'none';
+                }
+                saveData();
+                updatePortfolioTable();
+                updatePortfolioSummary();
+            }
+        }
         function recordTrade() {
             const stockName = document.getElementById('stockName').value || '未入力';
             const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
