@@ -5,8 +5,894 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>株取引成績管理</title>
     <meta name="theme-color" content="#3498db">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="株取引成績管理">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <!-- 上で作成したHTMLの全コードをここに貼り付け -->
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .section h2 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .input-group {
+            margin-bottom: 12px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .input-row input, .input-row select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .input-row span {
+            font-size: 12px;
+            color: #666;
+            min-width: 20px;
+        }
+        .result {
+            background: #e8f5e8;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #27ae60;
+        }
+        .result h3 {
+            margin: 0 0 10px 0;
+            color: #27ae60;
+            font-size: 14px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            padding: 3px 0;
+            border-bottom: 1px solid #d5e8d5;
+            font-size: 13px;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .neutral {
+            color: #34495e;
+        }
+        .stats-section {
+            background: #e2e3e5;
+            border-left-color: #6c757d;
+        }
+        .history-section {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+            border-bottom-color: #3498db;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .profit-loss-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .profit-loss-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .profit-loss-item h4 {
+            margin: 0 0 8px 0;
+            font-size: 13px;
+        }
+        .profit-loss-item .amount {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stats-card {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .stats-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .stats-card .value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .add-button {
+            background: #3498db;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            font-size: 14px;
+        }
+        .add-button:hover {
+            background: #2980b9;
+        }
+        .record-button {
+            background: #27ae60;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            font-size: 14px;
+        }
+        .record-button:hover {
+            background: #229954;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+        th, td {
+            padding: 6px 4px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-size: 10px;
+        }
+        .remove-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        .chart-container {
+            margin-top: 15px;
+            height: 300px;
+        }
+        .export-section {
+            margin-top: 15px;
+            padding: 10px;
+            background: #d1ecf1;
+            border-radius: 6px;
+        }
+        .export-button {
+            background: #17a2b8;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 12px;
+        }
+        /* LocalStorage対応版 */
+        .save-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #27ae60;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: none;
+        }
+    </style>
 </head>
-<!-- 残りの部分も全て貼り付け -->
+<body>
+    <div class="save-indicator" id="saveIndicator">💾 保存しました</div>
+    
+    <div class="container">
+        <h1>📊 株取引成績管理</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('trade')">取引</button>
+            <button class="tab" onclick="showTab('history')">履歴</button>
+            <button class="tab" onclick="showTab('stats')">成績</button>
+            <button class="tab" onclick="showTab('chart')">グラフ</button>
+        </div>
+
+        <!-- 取引タブ -->
+        <div id="trade" class="tab-content active">
+            <div class="section">
+                <h2>🔢 取引計算</h2>
+                <div class="input-group">
+                    <label>銘柄名</label>
+                    <div class="input-row">
+                        <input type="text" id="stockName" placeholder="例: トヨタ自動車">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>購入価格</label>
+                    <div class="input-row">
+                        <input type="number" id="buyPrice" placeholder="1000">
+                        <span>円</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>購入株数</label>
+                    <div class="input-row">
+                        <input type="number" id="buyShares" placeholder="100">
+                        <span>株</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>売却価格</label>
+                    <div class="input-row">
+                        <input type="number" id="sellPrice" placeholder="1100">
+                        <span>円</span>
+                    </div>
+                </div>
+                
+                <div class="result">
+                    <h3>📈 取引結果</h3>
+                    <div class="result-item">
+                        <span>購入金額:</span>
+                        <span id="totalBuyAmount" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span>売却金額:</span>
+                        <span id="totalSellAmount" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span>手数料:</span>
+                        <span id="totalFees" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span>税金:</span>
+                        <span id="totalTax" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span><strong>最終損益:</strong></span>
+                        <span id="finalProfit" class="neutral"><strong>0円</strong></span>
+                    </div>
+                    <div class="result-item">
+                        <span>損益率:</span>
+                        <span id="profitRate" class="neutral">0%</span>
+                    </div>
+                </div>
+                
+                <button class="record-button" onclick="recordTrade()">📝 取引を記録</button>
+            </div>
+
+            <!-- 利確・損切計算 -->
+            <div class="section">
+                <h2>🎯 利確・損切計算</h2>
+                <div class="input-group">
+                    <label>利確価格</label>
+                    <div class="input-row">
+                        <input type="number" id="profitPrice" placeholder="1200">
+                        <span>円</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>損切価格</label>
+                    <div class="input-row">
+                        <input type="number" id="lossPrice" placeholder="900">
+                        <span>円</span>
+                    </div>
+                </div>
+                
+                <div class="profit-loss-grid">
+                    <div class="profit-loss-item">
+                        <h4>🟢 利確時</h4>
+                        <div class="amount positive" id="profitAmount">+0円</div>
+                        <div class="rate positive" id="profitAmountRate">+0%</div>
+                    </div>
+                    <div class="profit-loss-item">
+                        <h4>🔴 損切時</h4>
+                        <div class="amount negative" id="lossAmount">-0円</div>
+                        <div class="rate negative" id="lossAmountRate">-0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 取引履歴タブ -->
+        <div id="history" class="tab-content">
+            <div class="section history-section">
+                <h2>📋 取引履歴</h2>
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>日付</th>
+                            <th>銘柄</th>
+                            <th>株数</th>
+                            <th>購入価格</th>
+                            <th>売却価格</th>
+                            <th>損益</th>
+                            <th>損益率</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <!-- 動的に追加される行 -->
+                    </tbody>
+                </table>
+                
+                <div class="export-section">
+                    <h4>📤 データ管理</h4>
+                    <button class="export-button" onclick="exportData()">CSVエクスポート</button>
+                    <button class="export-button" onclick="clearHistory()">履歴クリア</button>
+                    <button class="export-button" onclick="backupData()">バックアップ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成績統計タブ -->
+        <div id="stats" class="tab-content">
+            <div class="section stats-section">
+                <h2>📊 取引成績統計</h2>
+                
+                <div class="stats-grid">
+                    <div class="stats-card">
+                        <h4>総取引回数</h4>
+                        <div class="value neutral" id="totalTrades">0回</div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>勝率</h4>
+                        <div class="value positive" id="winRate">0%</div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>勝ち回数</h4>
+                        <div class="value positive" id="winCount">0回</div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>負け回数</h4>
+                        <div class="value negative" id="loseCount">0回</div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>総利益</h4>
+                        <div class="value positive" id="totalProfit">0円</div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>平均利益率</h4>
+                        <div class="value neutral" id="avgProfitRate">0%</div>
+                    </div>
+                </div>
+
+                <div class="result">
+                    <h3>📈 月別成績</h3>
+                    <div class="result-item">
+                        <span>今月の取引:</span>
+                        <span id="monthlyTrades" class="neutral">0回</span>
+                    </div>
+                    <div class="result-item">
+                        <span>今月の損益:</span>
+                        <span id="monthlyProfit" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span>今月の勝率:</span>
+                        <span id="monthlyWinRate" class="neutral">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- グラフタブ -->
+        <div id="chart" class="tab-content">
+            <div class="section">
+                <h2>📈 損益推移グラフ</h2>
+                <div class="chart-container">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>🥧 勝敗比率</h2>
+                <div class="chart-container">
+                    <canvas id="winLossChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // データ管理（LocalStorage使用）
+        let tradeHistory = [];
+        let charts = {};
+
+        // タブ切り替え
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'chart') {
+                setTimeout(updateCharts, 100);
+            }
+            if (tabName === 'stats') {
+                updateStats();
+            }
+        }
+
+        // 保存インジケーター表示
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.style.display = 'block';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 2000);
+        }
+
+        // データ保存・読み込み（LocalStorage使用）
+        function saveData() {
+            try {
+                const data = {
+                    history: tradeHistory,
+                    lastSaved: new Date().toISOString()
+                };
+                localStorage.setItem('stockTradingData', JSON.stringify(data));
+                showSaveIndicator();
+            } catch (e) {
+                console.warn('データ保存に失敗しました:', e);
+            }
+        }
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('stockTradingData');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    tradeHistory = data.history || [];
+                    updateHistoryTable();
+                    updateStats();
+                }
+            } catch (e) {
+                console.warn('データ読み込みに失敗しました:', e);
+                tradeHistory = [];
+            }
+        }
+
+        // 取引計算
+        function calculateTrade() {
+            const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
+            const buyShares = parseInt(document.getElementById('buyShares').value) || 0;
+            const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+            const buyFee = 99;
+
+            const buyAmount = buyPrice * buyShares;
+            const sellAmount = sellPrice * buyShares;
+            const totalFees = buyFee * 2;
+            const grossProfit = sellAmount - buyAmount - totalFees;
+            const tax = grossProfit > 0 ? grossProfit * 0.20315 : 0;
+            const finalProfit = grossProfit - tax;
+            const profitRate = buyAmount > 0 ? (finalProfit / buyAmount) * 100 : 0;
+
+            document.getElementById('totalBuyAmount').textContent = (buyAmount + buyFee).toLocaleString() + '円';
+            document.getElementById('totalSellAmount').textContent = sellAmount.toLocaleString() + '円';
+            document.getElementById('totalFees').textContent = totalFees.toLocaleString() + '円';
+            document.getElementById('totalTax').textContent = tax.toLocaleString() + '円';
+            document.getElementById('finalProfit').textContent = finalProfit.toLocaleString() + '円';
+            document.getElementById('profitRate').textContent = profitRate.toFixed(2) + '%';
+
+            // 色分け
+            const profitElement = document.getElementById('finalProfit');
+            const rateElement = document.getElementById('profitRate');
+            
+            if (finalProfit > 0) {
+                profitElement.className = 'positive';
+                rateElement.className = 'positive';
+            } else if (finalProfit < 0) {
+                profitElement.className = 'negative';
+                rateElement.className = 'negative';
+            } else {
+                profitElement.className = 'neutral';
+                rateElement.className = 'neutral';
+            }
+
+            calculateProfitLoss();
+        }
+
+        function calculateProfitLoss() {
+            const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
+            const buyShares = parseInt(document.getElementById('buyShares').value) || 0;
+            const profitPrice = parseFloat(document.getElementById('profitPrice').value) || 0;
+            const lossPrice = parseFloat(document.getElementById('lossPrice').value) || 0;
+            const buyFee = 99;
+
+            const buyAmount = buyPrice * buyShares;
+            const totalFees = buyFee * 2;
+
+            // 利確計算
+            if (profitPrice > 0 && buyShares > 0) {
+                const profitSellAmount = profitPrice * buyShares;
+                const profitGross = profitSellAmount - buyAmount - totalFees;
+                const profitTax = profitGross > 0 ? profitGross * 0.20315 : 0;
+                const profitFinal = profitGross - profitTax;
+                const profitRate = buyAmount > 0 ? (profitFinal / buyAmount) * 100 : 0;
+
+                document.getElementById('profitAmount').textContent = '+' + profitFinal.toLocaleString() + '円';
+                document.getElementById('profitAmountRate').textContent = '+' + profitRate.toFixed(2) + '%';
+            }
+
+            // 損切計算
+            if (lossPrice > 0 && buyShares > 0) {
+                const lossSellAmount = lossPrice * buyShares;
+                const lossGross = lossSellAmount - buyAmount - totalFees;
+                const lossTax = lossGross > 0 ? lossGross * 0.20315 : 0;
+                const lossFinal = lossGross - lossTax;
+                const lossRate = buyAmount > 0 ? (lossFinal / buyAmount) * 100 : 0;
+
+                document.getElementById('lossAmount').textContent = lossFinal.toLocaleString() + '円';
+                document.getElementById('lossAmountRate').textContent = lossRate.toFixed(2) + '%';
+            }
+        }
+
+        // 取引記録
+        function recordTrade() {
+            const stockName = document.getElementById('stockName').value || '未入力';
+            const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
+            const buyShares = parseInt(document.getElementById('buyShares').value) || 0;
+            const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+
+            if (buyPrice > 0 && buyShares > 0 && sellPrice > 0) {
+                const buyAmount = buyPrice * buyShares;
+                const sellAmount = sellPrice * buyShares;
+                const totalFees = 99 * 2;
+                const grossProfit = sellAmount - buyAmount - totalFees;
+                const tax = grossProfit > 0 ? grossProfit * 0.20315 : 0;
+                const finalProfit = grossProfit - tax;
+                const profitRate = (finalProfit / buyAmount) * 100;
+
+                const trade = {
+                    id: Date.now(),
+                    date: new Date().toLocaleDateString('ja-JP'),
+                    stockName: stockName,
+                    buyPrice: buyPrice,
+                    sellPrice: sellPrice,
+                    shares: buyShares,
+                    profit: finalProfit,
+                    profitRate: profitRate,
+                    isWin: finalProfit > 0
+                };
+
+                tradeHistory.push(trade);
+                saveData();
+                updateHistoryTable();
+                updateStats();
+
+                // 入力フィールドをクリア
+                document.getElementById('stockName').value = '';
+                document.getElementById('buyPrice').value = '';
+                document.getElementById('buyShares').value = '';
+                document.getElementById('sellPrice').value = '';
+                calculateTrade();
+
+                alert('取引を記録しました！');
+            } else {
+                alert('すべての項目を入力してください。');
+            }
+        }
+
+        // 履歴テーブル更新
+        function updateHistoryTable() {
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = '';
+
+            tradeHistory.slice().reverse().forEach(trade => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${trade.date}</td>
+                    <td>${trade.stockName}</td>
+                    <td>${trade.shares}</td>
+                    <td>¥${trade.buyPrice.toLocaleString()}</td>
+                    <td>¥${trade.sellPrice.toLocaleString()}</td>
+                    <td class="${trade.profit >= 0 ? 'positive' : 'negative'}">¥${trade.profit.toLocaleString()}</td>
+                    <td class="${trade.profitRate >= 0 ? 'positive' : 'negative'}">${trade.profitRate.toFixed(2)}%</td>
+                    <td><button onclick="removeTrade(${trade.id})" class="remove-button">削除</button></td>
+                `;
+            });
+        }
+
+        // 統計更新
+        function updateStats() {
+            const totalTrades = tradeHistory.length;
+            const wins = tradeHistory.filter(t => t.isWin).length;
+            const losses = totalTrades - wins;
+            const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
+            const totalProfit = tradeHistory.reduce((sum, t) => sum + t.profit, 0);
+            const avgProfitRate = totalTrades > 0 ? tradeHistory.reduce((sum, t) => sum + t.profitRate, 0) / totalTrades : 0;
+
+            // 今月のデータ
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const monthlyTrades = tradeHistory.filter(t => {
+                const tradeDate = new Date(t.date);
+                return tradeDate.getMonth() === currentMonth && tradeDate.getFullYear() === currentYear;
+            });
+            const monthlyWins = monthlyTrades.filter(t => t.isWin).length;
+            const monthlyWinRate = monthlyTrades.length > 0 ? (monthlyWins / monthlyTrades.length) * 100 : 0;
+            const monthlyProfit = monthlyTrades.reduce((sum, t) => sum + t.profit, 0);
+
+            document.getElementById('totalTrades').textContent = totalTrades + '回';
+            document.getElementById('winRate').textContent = winRate.toFixed(1) + '%';
+            document.getElementById('winCount').textContent = wins + '回';
+            document.getElementById('loseCount').textContent = losses + '回';
+            document.getElementById('totalProfit').textContent = totalProfit.toLocaleString() + '円';
+            document.getElementById('avgProfitRate').textContent = avgProfitRate.toFixed(2) + '%';
+            
+            document.getElementById('monthlyTrades').textContent = monthlyTrades.length + '回';
+            document.getElementById('monthlyProfit').textContent = monthlyProfit.toLocaleString() + '円';
+            document.getElementById('monthlyWinRate').textContent = monthlyWinRate.toFixed(1) + '%';
+
+            // 色分け
+            document.getElementById('totalProfit').className = totalProfit >= 0 ? 'positive' : 'negative';
+            document.getElementById('monthlyProfit').className = monthlyProfit >= 0 ? 'positive' : 'negative';
+        }
+
+        // グラフ更新
+        function updateCharts() {
+            updateProfitChart();
+            updateWinLossChart();
+        }
+
+        function updateProfitChart() {
+            const ctx = document.getElementById('profitChart').getContext('2d');
+            
+            if (charts.profit) {
+                charts.profit.destroy();
+            }
+
+            // 累積損益のデータ作成
+            let cumulativeProfit = 0;
+            const data = tradeHistory.map((trade, index) => {
+                cumulativeProfit += trade.profit;
+                return {
+                    x: index + 1,
+                    y: cumulativeProfit
+                };
+            });
+
+            charts.profit = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: '累積損益 (円)',
+                        data: data,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '取引回数'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '累積損益 (円)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateWinLossChart() {
+            const ctx = document.getElementById('winLossChart').getContext('2d');
+            
+            if (charts.winLoss) {
+                charts.winLoss.destroy();
+            }
+
+            const wins = tradeHistory.filter(t => t.isWin).length;
+            const losses = tradeHistory.length - wins;
+
+            if (wins === 0 && losses === 0) {
+                // データがない場合はグラフを表示しない
+                return;
+            }
+
+            charts.winLoss = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['勝ち', '負け'],
+                    datasets: [{
+                        data: [wins, losses],
+                        backgroundColor: ['#27ae60', '#e74c3c'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 取引削除
+        function removeTrade(id) {
+            if (confirm('この取引を削除しますか？')) {
+                tradeHistory = tradeHistory.filter(trade => trade.id !== id);
+                saveData();
+                updateHistoryTable();
+                updateStats();
+            }
+        }
+
+        // データエクスポート
+        function exportData() {
+            if (tradeHistory.length === 0) {
+                alert('エクスポートするデータがありません。');
+                return;
+            }
+
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + "日付,銘柄名,購入価格,売却価格,株数,損益,損益率\n"
+                + tradeHistory.map(trade => 
+                    `${trade.date},${trade.stockName},${trade.buyPrice},${trade.sellPrice},${trade.shares},${trade.profit},${trade.profitRate}%`
+                ).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `株取引履歴_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // バックアップ
+        function backupData() {
+            if (tradeHistory.length === 0) {
+                alert('バックアップするデータがありません。');
+                return;
+            }
+
+            const backupData = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                tradeHistory: tradeHistory
+            };
+
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `株取引バックアップ_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('バックアップファイルをダウンロードしました。');
+        }
+
+        // 履歴クリア
+        function clearHistory() {
+            if (confirm('すべての取引履歴を削除しますか？この操作は取り消せません。')) {
+                tradeHistory = [];
+                saveData();
+                updateHistoryTable();
+                updateStats();
+                updateCharts();
+                alert('履歴をクリアしました。');
+            }
+        }
+
+        // イベントリスナー
+        document.getElementById('buyPrice').addEventListener('input', calculateTrade);
+        document.getElementById('buyShares').addEventListener('input', calculateTrade);
+        document.getElementById('sellPrice').addEventListener('input', calculateTrade);
+        document.getElementById('profitPrice').addEventListener('input', calculateProfitLoss);
+        document.getElementById('lossPrice').addEventListener('input', calculateProfitLoss);
+
+        // 初期化
+        window.addEventListener('load', function() {
+            loadData();
+            calculateTrade();
+            updateStats();
+        });
+    </script>
+</body>
 </html>
