@@ -509,34 +509,41 @@
                     <h4>📤 データ管理</h4>
                     <button class="export-button" onclick="exportData()">CSVエクスポート</button>
                     <button class="export-button" onclick="backupData()">バックアップ</button>
-                    <button class="export-button" onclick="showImportModal()">データ復元</button>
-                    <button class="export-button" onclick="syncData()">デバイス間同期</button>
+                    <button class="export-button" onclick="showSyncCode()">📱 簡単同期</button>
+                    <button class="export-button" onclick="showImportArea()">📥 データ取込</button>
                     <button class="export-button" onclick="clearHistory()">履歴クリア</button>
                 </div>
 
-                <!-- データ同期モーダル -->
-                <div id="syncModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 90%; width: 400px;">
-                        <h3>🔄 デバイス間同期</h3>
-                        <p>以下のコードをコピーして、他のデバイスで「データ復元」に貼り付けてください：</p>
-                        <textarea id="syncCode" readonly style="width: 100%; height: 100px; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"></textarea>
-                        <div style="text-align: center; margin-top: 15px;">
-                            <button onclick="copySyncCode()" style="background: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">コードをコピー</button>
-                            <button onclick="closeSyncModal()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">閉じる</button>
-                        </div>
+                <!-- 簡単同期表示エリア -->
+                <div id="simpleSyncArea" style="display: none; margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+                    <h4>📱 他のデバイスに送るコード</h4>
+                    <p>以下のコードを<strong>メール・LINE・メモ</strong>で自分に送信してください：</p>
+                    <textarea id="syncCodeDisplay" readonly style="width: 100%; height: 100px; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; background: white;"></textarea>
+                    <div style="text-align: center;">
+                        <button onclick="copySyncCodeSimple()" style="background: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">📋 コピー</button>
+                        <button onclick="hideSyncCode()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">閉じる</button>
                     </div>
                 </div>
 
-                <!-- データインポートモーダル -->
-                <div id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 90%; width: 400px;">
-                        <h3>📥 データ復元</h3>
-                        <p>他のデバイスで生成した同期コードを貼り付けてください：</p>
-                        <textarea id="importCode" placeholder="同期コードをここに貼り付け..." style="width: 100%; height: 100px; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"></textarea>
-                        <div style="text-align: center; margin-top: 15px;">
-                            <button onclick="importData()" style="background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">データを復元</button>
-                            <button onclick="closeImportModal()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">キャンセル</button>
-                        </div>
+                <!-- 簡単データ取込エリア -->
+                <div id="simpleImportArea" style="display: none; margin-top: 20px; padding: 15px; background: #d1ecf1; border-radius: 8px;">
+                    <h4>📥 他のデバイスからデータを取込</h4>
+                    <p>他のデバイスで生成したコードを貼り付けてください：</p>
+                    <textarea id="importCodeInput" placeholder="ここにコードを貼り付け..." style="width: 100%; height: 100px; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"></textarea>
+                    <div style="text-align: center;">
+                        <button onclick="importDataSimple()" style="background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">📥 データ取込</button>
+                        <button onclick="hideImportArea()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">キャンセル</button>
+                    </div>
+                </div>
+
+                <!-- URL同期エリア -->
+                <div id="urlSyncArea" style="display: none; margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                    <h4>🔗 URL同期（超簡単）</h4>
+                    <p>以下のリンクを他のデバイスで開くとデータが同期されます：</p>
+                    <input type="text" id="syncUrlDisplay" readonly style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; background: white;">
+                    <div style="text-align: center;">
+                        <button onclick="copySyncUrl()" style="background: #f39c12; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">🔗 URLコピー</button>
+                        <button onclick="hideUrlSync()" style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin: 5px;">閉じる</button>
                     </div>
                 </div>
             </div>
@@ -1485,21 +1492,179 @@
             }
         }
 
-        // 緊急用の手動同期（簡易版）
-        function emergencySync() {
+        // 簡単同期機能（iPhone対応）
+        function showSyncCode() {
             try {
-                const data = {
-                    history: tradeHistory || [],
-                    portfolio: portfolioData || []
+                const syncData = {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    tradeHistory: tradeHistory || [],
+                    portfolioData: portfolioData || []
                 };
+
+                const syncCode = btoa(unescape(encodeURIComponent(JSON.stringify(syncData))));
                 
-                const code = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+                document.getElementById('syncCodeDisplay').value = syncCode;
+                document.getElementById('simpleSyncArea').style.display = 'block';
+                document.getElementById('simpleImportArea').style.display = 'none';
+                document.getElementById('urlSyncArea').style.display = 'none';
                 
-                // プロンプトで表示
-                prompt('以下の同期コードをコピーしてください（全選択してCtrl+C）:', code);
+                // ページの一番下にスクロール
+                document.getElementById('simpleSyncArea').scrollIntoView({behavior: 'smooth'});
                 
+            } catch (error) {
+                alert('同期コードの生成でエラーが発生しました: ' + error.message);
+            }
+        }
+
+        function showImportArea() {
+            document.getElementById('simpleImportArea').style.display = 'block';
+            document.getElementById('simpleSyncArea').style.display = 'none';
+            document.getElementById('urlSyncArea').style.display = 'none';
+            
+            // ページの一番下にスクロール
+            document.getElementById('simpleImportArea').scrollIntoView({behavior: 'smooth'});
+        }
+
+        function copySyncCodeSimple() {
+            try {
+                const syncCode = document.getElementById('syncCodeDisplay');
+                syncCode.select();
+                syncCode.setSelectionRange(0, 99999);
+                
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(syncCode.value).then(() => {
+                        alert('📋 同期コードをコピーしました！\nメールやLINEで自分に送信してください。');
+                    }).catch(() => {
+                        document.execCommand('copy');
+                        alert('📋 同期コードをコピーしました！\nメールやLINEで自分に送信してください。');
+                    });
+                } else {
+                    document.execCommand('copy');
+                    alert('📋 同期コードをコピーしました！\nメールやLINEで自分に送信してください。');
+                }
             } catch (e) {
-                alert('緊急同期でもエラーが発生しました: ' + e.message);
+                alert('手動でコードをコピーしてください。');
+            }
+        }
+
+        function importDataSimple() {
+            try {
+                const importCode = document.getElementById('importCodeInput').value.trim();
+                if (!importCode) {
+                    alert('コードを貼り付けてください。');
+                    return;
+                }
+
+                const syncData = JSON.parse(decodeURIComponent(escape(atob(importCode))));
+                
+                if (confirm('🔄 データを取り込みますか？\n（現在のデータは上書きされます）')) {
+                    tradeHistory = syncData.tradeHistory || [];
+                    portfolioData = syncData.portfolioData || [];
+                    
+                    saveData();
+                    updateHistoryTable();
+                    updatePortfolioTable();
+                    updatePortfolioSummary();
+                    updateStats();
+                    
+                    hideImportArea();
+                    alert('✅ データの取り込みが完了しました！');
+                    
+                    // ページをリロードして反映
+                    setTimeout(() => location.reload(), 1000);
+                }
+            } catch (e) {
+                alert('❌ 無効なコードです。正しいコードを貼り付けてください。');
+            }
+        }
+
+        function hideSyncCode() {
+            document.getElementById('simpleSyncArea').style.display = 'none';
+        }
+
+        function hideImportArea() {
+            document.getElementById('simpleImportArea').style.display = 'none';
+            document.getElementById('importCodeInput').value = '';
+        }
+
+        function hideUrlSync() {
+            document.getElementById('urlSyncArea').style.display = 'none';
+        }
+
+        // URL同期機能（さらに簡単）
+        function showUrlSync() {
+            try {
+                const syncData = {
+                    h: tradeHistory || [],
+                    p: portfolioData || []
+                };
+
+                const compressedData = btoa(unescape(encodeURIComponent(JSON.stringify(syncData))));
+                const currentUrl = window.location.href.split('?')[0];
+                const syncUrl = `${currentUrl}?sync=${compressedData}`;
+                
+                document.getElementById('syncUrlDisplay').value = syncUrl;
+                document.getElementById('urlSyncArea').style.display = 'block';
+                document.getElementById('simpleSyncArea').style.display = 'none';
+                document.getElementById('simpleImportArea').style.display = 'none';
+                
+                document.getElementById('urlSyncArea').scrollIntoView({behavior: 'smooth'});
+                
+            } catch (error) {
+                alert('URL同期の生成でエラーが発生しました');
+            }
+        }
+
+        function copySyncUrl() {
+            try {
+                const syncUrl = document.getElementById('syncUrlDisplay');
+                syncUrl.select();
+                syncUrl.setSelectionRange(0, 99999);
+                
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(syncUrl.value).then(() => {
+                        alert('🔗 同期URLをコピーしました！\n他のデバイスでこのURLを開くとデータが同期されます。');
+                    }).catch(() => {
+                        document.execCommand('copy');
+                        alert('🔗 同期URLをコピーしました！\n他のデバイスでこのURLを開くとデータが同期されます。');
+                    });
+                } else {
+                    document.execCommand('copy');
+                    alert('🔗 同期URLをコピーしました！\n他のデバイスでこのURLを開くとデータが同期されます。');
+                }
+            } catch (e) {
+                alert('手動でURLをコピーしてください。');
+            }
+        }
+
+        // URL同期データの自動読み込み
+        function loadFromUrl() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const syncData = urlParams.get('sync');
+                
+                if (syncData) {
+                    const data = JSON.parse(decodeURIComponent(escape(atob(syncData))));
+                    
+                    if (confirm('📱 同期データが見つかりました。\nデータを取り込みますか？')) {
+                        tradeHistory = data.h || [];
+                        portfolioData = data.p || [];
+                        
+                        saveData();
+                        updateHistoryTable();
+                        updatePortfolioTable();
+                        updatePortfolioSummary();
+                        updateStats();
+                        
+                        alert('✅ データの同期が完了しました！');
+                        
+                        // URLのパラメータを削除
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                }
+            } catch (e) {
+                console.warn('URL同期データの読み込みに失敗:', e);
             }
         }
         function clearHistory() {
@@ -1523,6 +1688,7 @@
         // 初期化
         window.addEventListener('load', function() {
             loadData();
+            loadFromUrl(); // URL同期データの自動読み込み
             calculateTrade();
             updateStats();
         });
