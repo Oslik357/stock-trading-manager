@@ -282,8 +282,9 @@
 
         <!-- 取引タブ -->
         <div id="trade" class="tab-content active">
+            <!-- 基本情報入力 -->
             <div class="section">
-                <h2>🔢 取引計算</h2>
+                <h2>📝 銘柄・購入情報</h2>
                 <div class="input-group">
                     <label>銘柄名</label>
                     <div class="input-row">
@@ -304,48 +305,27 @@
                         <span>株</span>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>売却価格</label>
-                    <div class="input-row">
-                        <input type="number" id="sellPrice" placeholder="1100">
-                        <span>円</span>
-                    </div>
-                </div>
                 
                 <div class="result">
-                    <h3>📈 取引結果</h3>
+                    <h3>💰 購入金額</h3>
                     <div class="result-item">
-                        <span>購入金額:</span>
-                        <span id="totalBuyAmount" class="neutral">0円</span>
-                    </div>
-                    <div class="result-item">
-                        <span>売却金額:</span>
-                        <span id="totalSellAmount" class="neutral">0円</span>
+                        <span>購入代金:</span>
+                        <span id="buyAmountOnly" class="neutral">0円</span>
                     </div>
                     <div class="result-item">
                         <span>手数料:</span>
-                        <span id="totalFees" class="neutral">0円</span>
+                        <span id="buyFeeOnly" class="neutral">99円</span>
                     </div>
                     <div class="result-item">
-                        <span>税金:</span>
-                        <span id="totalTax" class="neutral">0円</span>
-                    </div>
-                    <div class="result-item">
-                        <span><strong>最終損益:</strong></span>
-                        <span id="finalProfit" class="neutral"><strong>0円</strong></span>
-                    </div>
-                    <div class="result-item">
-                        <span>損益率:</span>
-                        <span id="profitRate" class="neutral">0%</span>
+                        <span><strong>合計投資額:</strong></span>
+                        <span id="totalInvestment" class="neutral"><strong>0円</strong></span>
                     </div>
                 </div>
-                
-                <button class="record-button" onclick="recordTrade()">📝 取引を記録</button>
             </div>
 
-            <!-- 利確・損切計算 -->
+            <!-- 利確・損切シミュレーション -->
             <div class="section">
-                <h2>🎯 利確・損切計算</h2>
+                <h2>🎯 利確・損切シミュレーション</h2>
                 <div class="input-group">
                     <label>利確価格</label>
                     <div class="input-row">
@@ -373,6 +353,48 @@
                         <div class="rate negative" id="lossAmountRate">-0%</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- 実際の売却価格と結果 -->
+            <div class="section">
+                <h2>📈 実際の取引結果</h2>
+                <div class="input-group">
+                    <label>実際の売却価格</label>
+                    <div class="input-row">
+                        <input type="number" id="sellPrice" placeholder="実際に売却した価格">
+                        <span>円</span>
+                    </div>
+                </div>
+                
+                <div class="result">
+                    <h3>💹 取引結果</h3>
+                    <div class="result-item">
+                        <span>売却金額:</span>
+                        <span id="totalSellAmount" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span>手数料合計:</span>
+                        <span id="totalFees" class="neutral">198円</span>
+                    </div>
+                    <div class="result-item">
+                        <span>税金:</span>
+                        <span id="totalTax" class="neutral">0円</span>
+                    </div>
+                    <div class="result-item">
+                        <span><strong>最終損益:</strong></span>
+                        <span id="finalProfit" class="neutral"><strong>0円</strong></span>
+                    </div>
+                    <div class="result-item">
+                        <span>損益率:</span>
+                        <span id="profitRate" class="neutral">0%</span>
+                    </div>
+                    <div class="result-item">
+                        <span>目標との差:</span>
+                        <span id="targetDiff" class="neutral">-</span>
+                    </div>
+                </div>
+                
+                <button class="record-button" onclick="recordTrade()">📝 取引を記録して反省材料に</button>
             </div>
         </div>
 
